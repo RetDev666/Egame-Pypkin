@@ -9,6 +9,16 @@ WIDTH, HEIGHT = 400, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Avoid the Enemy")
 
+#Завантаження зображення
+background = pygame.image.load('img/space.jpg')
+player_image = pygame.image.load('img/space-ship.png')
+comet_image = pygame.image.load('img/comet.png')
+
+#Маштабування зображення
+player_image = pygame.transform.scale(player_image, (60, 60))
+comet_image = pygame.transform.scale(comet_image,(60, 40))
+
+
 # Кольори
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -19,60 +29,62 @@ BLUE = (0, 0, 255)
 clock = pygame.time.Clock()
 
 # Гравець
-player_size = 50
-player_x = WIDTH // 2 - player_size // 2
-player_y = HEIGHT - player_size - 10
-player_speed = 5
+player_size = 60
+player_pos = [WIDTH//2, HEIGHT -2 * player_size]
 
-# Ворог (блок, що падає)
-enemy_size = 50
-enemy_x = random.randint(0, WIDTH - enemy_size)
-enemy_y = -enemy_size
-enemy_speed = 5
+# Клас для комети
+class Comet:
+    def __init__(self):
+        self.size = random.randint(30, 50)
+        self.pos = [random.randint(0, WIDTH - self.size), 0]
+        self.speed = random.randint(5, 15)
 
-# Функція для відображення гравця
-def draw_player(x, y):
-    pygame.draw.rect(screen, BLUE, (x, y, player_size, player_size))
+    def move(self):
+        self.pos[1] += self.speed
+        if self.pos[1] > HEIGHT:
+            self.pos = [random.randint(0, WIDTH - self.size), 0]
+            self.speed = random.randint(5, 15)
 
-# Функція для відображення ворога
-def draw_enemy(x, y):
-    pygame.draw.rect(screen, RED, (x, y, enemy_size, enemy_size))
+    def draw(self):
+        screen.blit(comet_image, (self.pos[0], self.pos[1]))
 
-# Головний цикл гри
-running = True
-while running:
-    clock.tick(60)  # 60 кадрів на секунду
-    screen.fill(BLACK)  # Очищення екрану
+# Створення списку комет
+comets = [Comet() for _ in range(5)]
 
-    # Перевірка подій
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
+# Функці відображення меню
+def game_menu():
+    menu = True
+    font = pygame.font.SysFont('Monospace', 50)
 
-    # Управління гравцем
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_LEFT] and player_x > 0:
-        player_x -= player_speed
-    if keys[pygame.K_RIGHT] and player_x < WIDTH - player_size:
-        player_x += player_speed
 
-    # Падіння ворога
-    enemy_y += enemy_speed
-    if enemy_y > HEIGHT:
-        enemy_y = -enemy_size
-        enemy_x = random.randint(0, WIDTH - enemy_size)
+    while menu:
+        screen.fill(BLACK)
+        lable = font.render('Space Game', 1, WHITE)
+        start_lable = font.render('Start', 1, WHITE)
+        quit_lable = font.render('Quit', 1, WHITE)
+        screen.blit(lable, (WIDTH//2 - lable.get_width()//2, HEIGHT//4))
+        screen.blit(start_lable, (WIDTH // 2 - lable.get_width() // 2, HEIGHT // 2))
+        screen.blit(quit_lable, (WIDTH // 2 - lable.get_width() // 2, HEIGHT // 1.5))
+        pygame.display.update()
 
-    # Перевірка зіткнення
-    if (enemy_y + enemy_size > player_y and
-        enemy_x < player_x + player_size and
-        enemy_x + enemy_size > player_x):
-        running = False  # Гра закінчується при зіткненні
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+            if event.type == pygame.MOUSEBUTTONDOWN: x, y = pygame.mouse.get_pos()
+            if WIDTH//2 - start_lable.get_width()//2 < x < WIDTH//2 + start_lable.get_width()//2 and HEIGHT//2 < y <HEIGHT//2 + start_lable.get_height():
+                menu = False # Початок гри
+            if WIDTH//2 - quit_lable.get_width()//2 < x < WIDTH//2 + quit_lable.get_width()//2 and HEIGHT//1.5 < y < HEIGHT//1.5 + quit_lable.get_height():
+                pygame.quit()
+                quit()
+# Функція для відображення таймера
 
-    # Відображення гравця та ворога
-    draw_player(player_x, player_y)
-    draw_enemy(enemy_x, enemy_y)
+    def display_timer(start_ticks):
+        font = pygame.font.SysFont('Monospace', 35)
+        time_since_start = (pygame.time.get_ticks() - start_ticks) / 1000 # Час на секундах
+        label = font.render(f'Timer: {time_since_start}', 1, WHITE)
+        screen.bilt(label(10, 10))
 
-    # Оновлення екрану
-    pygame.display.flip()
-
-pygame.quit()
+# Основий цикил гри
+    def game_loop():
+        start_ticks = pygame.time.get_ticks() #Час початку гри
