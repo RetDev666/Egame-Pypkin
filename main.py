@@ -19,10 +19,12 @@ BLUE = (0, 0, 255)
 background_image = pygame.image.load('img/space.jpg')
 player_image = pygame.image.load('img/space-ship.png')
 comet_image = pygame.image.load('img/comet.png')
+star_image = pygame.image.load('img/star.png')  # Додали бонусний предмет (зірку)
 
 # Масштабування зображень
 player_image = pygame.transform.scale(player_image, (60, 60))
 comet_image = pygame.transform.scale(comet_image, (40, 40))
+star_image = pygame.transform.scale(star_image, (30, 30))
 
 # Швидкість оновлення екрану
 clock = pygame.time.Clock()
@@ -30,7 +32,7 @@ clock = pygame.time.Clock()
 # Гравець
 player_size = 60
 player_pos = [WIDTH // 2, HEIGHT - 2 * player_size]
-
+player_lives = 3  # Додали життя гравця
 
 # Клас для комет
 class Comet:
@@ -50,8 +52,31 @@ class Comet:
 
 
 # Створення списку комет
-comets = [Comet() for _ in range(5)]
+class Star:
+    def __init__(self):
+        self.size = 30
+        self.pos = [random.randint(0, WIDTH - self.size), 0]
+        self.speed = random.randint(3, 10)
 
+    def move(self):
+        self.pos[1] += self.speed
+        if self.pos[1] > HEIGHT:
+            self.pos = [random.randint(0, WIDTH - self.size), 0]
+            self.speed = random.randint(3, 10)
+
+    def draw(self):
+        screen.blit(star_image, (self.pos[0], self.pos[1]))
+
+# Створення списку комет і зірок
+comets = [Comet() for _ in range(6)]
+stars = [Star() for _ in range(3)]  # Додаємо кілька бонусних зірок
+
+def display_stats(score, lives):
+    font = pygame.font.SysFont("monospace", 35)
+    score_label = font.render(f"{score}", 1, WHITE)
+    lives_label = font.render(f"{lives}", 1, WHITE)
+    screen.blit(score_label, (player_pos[0], player_pos[1]))
+    screen.blit(lives_label, (player_pos[0], player_pos[1]))
 
 # Функція для відображення меню
 def game_menu():
@@ -95,6 +120,8 @@ def display_timer(start_ticks):
 def game_loop():
     start_ticks = pygame.time.get_ticks()  # Час початку гри
     game_over = False
+    score = 0
+    player_lives = True
 
     while not game_over:
         for event in pygame.event.get():
@@ -112,11 +139,20 @@ def game_loop():
         for comet in comets:
             comet.move()
 
+        for star in stars:
+            star.move()
+
         # Перевірка на зіткнення з кометами
         for comet in comets:
             if (player_pos[0] < comet.pos[0] + comet.size and player_pos[0] + player_size > comet.pos[0]) and \
                     (player_pos[1] < comet.pos[1] + comet.size and player_pos[1] + player_size > comet.pos[1]):
                 game_over = True
+
+        for star in stars:
+            if (player_pos[0] < star.pos[0] + star.size and player_pos[0] + player_size > star.pos[0]) and \
+                    (player_pos[1] < star.pos[1] + star.size and player_pos[1] + player_size > star.pos[1]):
+                score += 10  # Додавання очок за збір зірок
+                star.pos[1] = HEIGHT + 1  # Видалити зірку після збору
 
         # Очищення екрану та малювання фону
         screen.blit(background_image, (0, 0))
@@ -127,6 +163,9 @@ def game_loop():
         # Малювання комет
         for comet in comets:
             comet.draw()
+
+        for star in stars:
+            star.draw()
 
         # Відображення таймера
         display_timer(start_ticks)
